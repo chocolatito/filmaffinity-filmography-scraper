@@ -25,7 +25,6 @@ class ParserMixin:
             if impersonate is None:
                 impersonate = self.random_impersonate()
             try:
-                print(impersonate)
                 response = requests.get(url,
                                         proxies=self.proxies,
                                         impersonate=impersonate,
@@ -54,12 +53,3 @@ class ParserMixin:
             f.write(response.text)
         return self.html_parser(response.text)
 
-    def get_parameter_from_url(self, url, parameter_name):
-        for key_value in urllib.parse.urlparse(url).query.split("&"):
-            parts = key_value.split("=")
-            if parameter_name != parts[0]:
-                continue
-            if len(parts) == 1:
-                return None
-            else:
-                return parts[1]

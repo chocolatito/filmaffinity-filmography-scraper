@@ -1,6 +1,6 @@
 from src.parser_mixin import ParserMixin
 # from parser_mixin import ParserMixin
-
+from src import utils
 
 class Scraper(ParserMixin):
     FILM_XPATH_DICT = {
@@ -48,7 +48,7 @@ class Scraper(ParserMixin):
             key = key.replace(":", "").lower()
             print(f"{key}::: {value}")
             result[key] = value
-        result["name_id"] = self.get_parameter_from_url(url, "name-id")
+        result["name_id"] = utils.get_parameter_from_url(url, "name-id")
         return result
 
     def scrape_film(self, url) -> dict:
