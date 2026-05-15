@@ -1,0 +1,100 @@
+import random
+import re
+import time
+import urllib.parse
+
+from src import constants
+from src.parser_mixin import ParserMixin
+from src import utils
+# import constants
+# from parser_mixin import ParserMixin
+# import utils
+
+
+class Crawler(ParserMixin):
+
+    PARAMS = {
+        'stext': '',
+        'stype[]': 'title',
+        'country': '',
+        'genre': '',
+        'fromyear': '',
+        'toyear': '',
+    }
+    BASE_URL = "https://www.filmaffinity.com/us"
+    SEARCH_URL = f"{BASE_URL}/advsearch.php"
+    FILMOGRAPHY_URL = (BASE_URL+"/name-movies.php?name-id=%s"
+                       "&role-cat=none&orderby=date-desc&v=slist&p=1")
+    XPATH_DICT = {
+        "director": ('//h1[@id="main-title"]/following-sibling::div//ul/li'
+                     '//div[contains(@class,"director")]//span/a[@title]'),
+        "title_links": '//main[@id="mt-content-cell"]//div/ul/li//ul/li/div/a',
+        "ancestor_year": "ancestor::ul[1]/preceding-sibling::div[1]",
+        "href_links": '//nav/ul/li/a[contains(@href, "&p=")]/@href',
+    }
+
+    def __init__(self) -> None:
+        self.title_result = []
+        if constants.PROXY is None:
+            self.proxies = {}
+        else:
+            self.proxies = {"http": constants.PROXY, "https": constants.PROXY}
+        self.configure_parser(proxies=self.proxies)
+        self.results_by_title = []
+        self.director_dict = {}
+
+    def crawl_by_title(self, params):
+        kwargs = {"params": params}
+        tree = self.get_tree(self.SEARCH_URL, kwargs=kwargs)
+        director_element_list = tree.xpath(self.XPATH_DICT["director"])
+        assert director_element_list != [], "<director_element_list> is empty"
+        for de in director_element_list:
+            url = de.attrib["href"]
+            query = urllib.parse.urlparse(url).query
+            name_id = re.search(r"name-id=(\d+)", query).group(1)
+            filmography_url = self.FILMOGRAPHY_URL % name_id
+            self.results_by_title.append({
+                "name_id": name_id,
+                "url": url,
+                "name": de.attrib["title"],
+                "filmography_url": filmography_url})
+
+    def processe_single_page(self, url: str, check_total_pages: bool = False) -> list:
+        tree = self.get_tree(url)
+        result_list = []
+        href_list = tree.xpath(self.XPATH_DICT["title_links"])
+        for href in href_list:
+            result = {}
+            result["title"] = href.attrib["title"]
+            result["url"] = href.attrib["href"]
+            result["data_movie_id"] = re.search(r"/film(\d+).html", result["url"]).group(1)
+            result["year"] = href.xpath(self.XPATH_DICT["ancestor_year"])[0].text_content()
+            result_list.append(result)
+        if check_total_pages is False:
+            return result_list
+        href_list = tree.xpath(self.XPATH_DICT["href_links"])
+        all_pages = [1]
+        for href in href_list:
+            if match_obj := re.search(r"&p=(\d+)", href):
+                all_pages.append(int(match_obj.group(1)))
+        return max(all_pages), result_list
+
+    def crawl_filmography(self, url) -> list:
+        new_url = f"{url}&role-cat=none&orderby=date-desc&v=slist&p=1"
+        total_page, result_list = self.processe_single_page(new_url, check_total_pages=True)
+        if total_page == 1:
+            return result_list
+        for page in range(total_page+1, 2):
+            new_url = f"{url}&role-cat=none&orderby=date-desc&v=slist&p={page}"
+            result_list += self.processe_single_page(url)
+            time.sleep(random.uniform(1, 3))
+        return result_list
+
+        self.logger.info("")
+
+
+# if __name__ == "__main__":
+#     url = "https://www.filmaffinity.com/us/name-movies.php?name-id=452047124"
+#     url = "https://www.filmaffinity.com/us/name-movies.php?name-id=452047124&role-cat=none&orderby=date-desc&v=slist&p=1"
+#     crawler = Crawler()
+#     crawler.crawl_filmography(url)
