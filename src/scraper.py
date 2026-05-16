@@ -1,6 +1,7 @@
+from src import constants
 from src.parser_mixin import ParserMixin
-# from parser_mixin import ParserMixin
 from src import utils
+
 
 class Scraper(ParserMixin):
     FILM_XPATH_DICT = {
@@ -34,7 +35,7 @@ class Scraper(ParserMixin):
     def __init__(self):
         self.configure_parser()
 
-    def scrape_name(self, url):
+    def scrape_name(self, url) -> dict:
         tree = self.get_tree(url)
         result = {}
         result["name"] = tree.xpath(self.NAME_XPATH_DICT["name"])[0]
@@ -53,8 +54,7 @@ class Scraper(ParserMixin):
 
     def scrape_film(self, url) -> dict:
         result = {}
-        headers = {'accept-language': 'en;q=0.9'}
-        tree = self.get_tree(url, kwargs={"headers": headers})
+        tree = self.get_tree(url, kwargs={"headers": constants.HEADERS})
         result["data_movie_id"] = tree.xpath('//div[@id="item2item"]/@data-movie-id')[0]
         dd_list = tree.xpath(self.FILM_XPATH_DICT["dd_list"])
         for index, dd in enumerate(dd_list, 1):

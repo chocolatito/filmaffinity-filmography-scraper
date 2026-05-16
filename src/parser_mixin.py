@@ -48,8 +48,5 @@ class ParserMixin:
 
     def get_tree(self, url, impersonate: str = None, kwargs: str = {}):
         response = self.http_client(url, impersonate=impersonate, kwargs=kwargs)
-        file_name = "/".join(__file__.split("/")[:-1])+"/ex.html"
-        with open(file_name, "w", encoding="utf-8") as f:
-            f.write(response.text)
         return self.html_parser(response.text)
 

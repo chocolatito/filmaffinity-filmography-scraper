@@ -1,14 +1,10 @@
 import random
 import re
 import time
-import urllib.parse
 
 from src import constants
 from src.parser_mixin import ParserMixin
 from src import utils
-# import constants
-# from parser_mixin import ParserMixin
-# import utils
 
 
 class Crawler(ParserMixin):
@@ -43,23 +39,7 @@ class Crawler(ParserMixin):
         self.results_by_title = []
         self.director_dict = {}
 
-    def crawl_by_title(self, params):
-        kwargs = {"params": params}
-        tree = self.get_tree(self.SEARCH_URL, kwargs=kwargs)
-        director_element_list = tree.xpath(self.XPATH_DICT["director"])
-        assert director_element_list != [], "<director_element_list> is empty"
-        for de in director_element_list:
-            url = de.attrib["href"]
-            query = urllib.parse.urlparse(url).query
-            name_id = re.search(r"name-id=(\d+)", query).group(1)
-            filmography_url = self.FILMOGRAPHY_URL % name_id
-            self.results_by_title.append({
-                "name_id": name_id,
-                "url": url,
-                "name": de.attrib["title"],
-                "filmography_url": filmography_url})
-
-    def processe_single_page(self, url: str, check_total_pages: bool = False) -> list:
+    def processe_single_page(self, url: str, check_total_pages: bool = False) -> list | tuple[int, list]:
         tree = self.get_tree(url)
         result_list = []
         href_list = tree.xpath(self.XPATH_DICT["title_links"])
@@ -89,12 +69,3 @@ class Crawler(ParserMixin):
             result_list += self.processe_single_page(url)
             time.sleep(random.uniform(1, 3))
         return result_list
-
-        self.logger.info("")
-
-
-# if __name__ == "__main__":
-#     url = "https://www.filmaffinity.com/us/name-movies.php?name-id=452047124"
-#     url = "https://www.filmaffinity.com/us/name-movies.php?name-id=452047124&role-cat=none&orderby=date-desc&v=slist&p=1"
-#     crawler = Crawler()
-#     crawler.crawl_filmography(url)

@@ -37,9 +37,13 @@ def adapter_log(base_logger, worket_id: dict):
     return logging.LoggerAdapter(base_logger, worket_id)
 
 
-def join_names(name_list: list):
-    assert name_list != [], "<name_list> IS []"
-    return os.path.join(constants.BASE_DIR, *name_list)
+def join_names(names: str | list):
+    if isinstance(names, str):
+        return os.path.join(constants.BASE_DIR, names)
+    if isinstance(names, list):
+        assert names != [], "<name_list> IS []"
+        return os.path.join(constants.BASE_DIR, *names)
+    raise TypeError(f"Got a {type(names)}")
 
 
 def save_json(file_path: str, data: dict | list) -> str:
