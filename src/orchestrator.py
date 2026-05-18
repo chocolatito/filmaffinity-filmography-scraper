@@ -52,7 +52,6 @@ class Orchestrator:
                 continue
             film["full_details"] = False
             self.films_result_dict[data_movie_id] = film
-        item_director["full_details"] = True
         item_director["url"] = director_url
         self.names_result_dict[name_id] = item_director
 
@@ -96,7 +95,6 @@ class Orchestrator:
                     film["full_details"] = False
                     self.films_result_dict[data_movie_id] = film
             item["url"] = url
-            item["full_details"] = True
             self.names_result_dict[name_id] = item.copy()
 
     def main(self) -> None:

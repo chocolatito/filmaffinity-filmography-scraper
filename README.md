@@ -87,3 +87,51 @@ $ python main.py --json_input input.dev.json
 │   └── names_results.json
 ├── filmaffinity-filmography-scraper.log
 ```
+
+Example of `./FILES/films_results.json`
+```json
+{
+    "<data_movie_id_1>": {
+        "original_title": "string",
+        "extra_keys": "object",
+        "date_published": "string",
+        "duration": "string",
+        "country": "string",
+        "director": "array",
+        "screenwriter": "array",
+        "cast": "array",
+        "music": "array",
+        "cinematography": "array",
+        "producer": "array",
+        "genre": "array",
+        "movie_groups": "array",
+        "description": "string",
+        "data_movie_id": "string",
+        "url": "string",
+        "full_details": true
+    },
+    "<data_movie_id_2>": {
+        "title": "string",
+        "url": "string",
+        "data_movie_id": "string",
+        "year": "string",
+        "full_details": false
+    }
+}
+```
+
+Example of `./FILES/names_results.json`
+```json
+{
+    "name_id": {
+        "name": "string",
+        "filmography_url": "string",
+        "name_id": "string",
+        "filmography": [
+            "<data_movie_id_1>",
+            "<data_movie_id_2>"
+        ],
+        "url": "string"
+    }
+}
+```
