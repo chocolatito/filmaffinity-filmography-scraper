@@ -1,3 +1,5 @@
+from logging import Logger
+
 from src import constants
 from src.parser_mixin import ParserMixin
 from src import utils
@@ -5,16 +7,16 @@ from src import utils
 
 class Scraper(ParserMixin):
     FILM_XPATH_DICT = {
+        "data_movie_id": '//div[@id="item2item"]/@data-movie-id',
         "dd_list": '//div[@id="left-column"]/dl[1]/dt/following-sibling::dd',
     }
-    FILM_DIRECT_OBTAINING = []
+
     NAME_XPATH_DICT = {
         "name": '//h1[@id="main-title"]/a/@content',
         "attribute": '//div/strong/following-sibling::div[1]',
         "filmography": ('//h1[@id="main-title"]/../following-sibling::div'
                         '//ul/li/a[contains(@href, "name-movies.php")]/@href'),
     }
-    NAME_DIRECT_OBTAINING = []
     MATCH_KEYS = {
         "original title": "original_title",
         "datepublished": "date_published",
@@ -32,16 +34,26 @@ class Scraper(ParserMixin):
         "data_movie_id": "data_movie_id"
     }
 
-    def __init__(self):
+    def __init__(self, base_logger: Logger) -> None:
+        self.logger = utils.adapter_log(base_logger, {"worker_id": "SCRAPER"})
         self.configure_parser()
 
     def scrape_name(self, url) -> dict:
+        self.logger.info(f"Scraping name from {url}")
         tree = self.get_tree(url)
         result = {}
-        result["name"] = tree.xpath(self.NAME_XPATH_DICT["name"])[0]
-        result["filmography_url"] = tree.xpath(self.NAME_XPATH_DICT["filmography"])[0]
-        attribute_list = tree.xpath(self.NAME_XPATH_DICT["attribute"])
-        for att in attribute_list:
+        elements = tree.xpath(self.NAME_XPATH_DICT["name"])
+        if elements == []:
+            raise Exception('XPATH <name> DOES NOT WORK')
+        result["name"] = elements[0]
+
+        elements = tree.xpath(self.NAME_XPATH_DICT["filmography"])
+        if elements == []:
+            raise Exception('XPATH <name> DOES NOT WORK')
+
+        result["filmography_url"] = elements[0]
+        self.logger.info(f"Looking for attributes")
+        for att in tree.xpath(self.NAME_XPATH_DICT["attribute"]):
             value = att.text_content().strip()
             if value == "":
                 value = att.xpath("./a/@href")
@@ -53,9 +65,13 @@ class Scraper(ParserMixin):
         return result
 
     def scrape_film(self, url) -> dict:
+        self.logger.info(f"Scraping film from {url}")
         result = {}
         tree = self.get_tree(url, kwargs={"headers": constants.HEADERS})
-        result["data_movie_id"] = tree.xpath('//div[@id="item2item"]/@data-movie-id')[0]
+        elements = tree.xpath(self.FILM_XPATH_DICT["data_movie_id"])
+        if elements == []:
+            raise Exception('XPATH <data_movie_id> DOES NOT WORK')
+        result["data_movie_id"] = elements[0]
         dd_list = tree.xpath(self.FILM_XPATH_DICT["dd_list"])
         for index, dd in enumerate(dd_list, 1):
             if itemprop := dd.attrib.get("itemprop", None):
@@ -67,26 +83,25 @@ class Scraper(ParserMixin):
             if len(dd) == 0:
                 result[key] = dd.text_content().strip()
                 continue
-            if anchor_list := dd.xpath('.//a'):
-                values = []
-                for a in anchor_list:
-                    attrib = dict(a.attrib)
-                    if "class" in attrib:
-                        attrib.pop("class")
-                    if "itemprop" in attrib:
-                        attrib.pop("itemprop")
-                    if len(attrib) == 1:
-                        attrib["title"] = a.text.strip()
-                    values.append(attrib)
-                result[key] = values
-            else:
+            if not (anchor_list := dd.xpath('.//a')):
                 result[key] = dd.text_content().strip()
+                continue
+            values = []
+            for a in anchor_list:
+                attrib = dict(a.attrib)
+                if "class" in attrib:
+                    attrib.pop("class")
+                if "itemprop" in attrib:
+                    attrib.pop("itemprop")
+                if len(attrib) == 1:
+                    attrib["title"] = a.text.strip()
+                values.append(attrib)
+            result[key] = values
+
+        self.logger.info(f"Getting <clean_result> ...")
         clean_result = {}
         for k, v in self.MATCH_KEYS.items():
-            if k in result:
-                clean_result[v] = result[k]
-            else:
-                clean_result[v] = None
+            clean_result[v] = result[k] if k in result else None
             clean_result["extra_keys"] = {}
             for k, v in result.items():
                 if k in self.MATCH_KEYS:

@@ -5,7 +5,6 @@ import json
 import urllib.parse
 
 from src import constants
-# import constants
 
 
 def init__logger(file_name: str,
@@ -15,7 +14,7 @@ def init__logger(file_name: str,
     """
     """
     if log_format is None:
-        log_format = "%(asctime)s | %(levelname)-8s  | %(funcName)s#L-%(lineno)d | %(message)s"
+        log_format = "%(asctime)s | %(levelname)-7s [%(worker_id)s] %(funcName)s#L-%(lineno)d | %(message)s"
 
     logger = logging.getLogger(file_name)
     if debug_level:
@@ -23,7 +22,7 @@ def init__logger(file_name: str,
     else:
         logger.setLevel(logging.INFO)
 
-    file_handler = logging.FileHandler(os.path.join(constants.BASE_DIR, file_name), mode=mode)
+    file_handler = logging.FileHandler(join_names(file_name), mode=mode)
     formatter = logging.Formatter(log_format)
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)

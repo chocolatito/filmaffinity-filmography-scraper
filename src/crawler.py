@@ -1,3 +1,4 @@
+from logging import Logger
 import random
 import re
 import time
@@ -29,7 +30,8 @@ class Crawler(ParserMixin):
         "href_links": '//nav/ul/li/a[contains(@href, "&p=")]/@href',
     }
 
-    def __init__(self) -> None:
+    def __init__(self, base_logger: Logger) -> None:
+        self.logger = utils.adapter_log(base_logger, {"worker_id": "CRAWLER"})
         self.title_result = []
         if constants.PROXY is None:
             self.proxies = {}
@@ -40,6 +42,7 @@ class Crawler(ParserMixin):
         self.director_dict = {}
 
     def processe_single_page(self, url: str, check_total_pages: bool = False) -> list | tuple[int, list]:
+        self.logger.info(f"Fetching page {url}")
         tree = self.get_tree(url)
         result_list = []
         href_list = tree.xpath(self.XPATH_DICT["title_links"])
@@ -52,6 +55,7 @@ class Crawler(ParserMixin):
             result_list.append(result)
         if check_total_pages is False:
             return result_list
+        self.logger.info(f"Obtaining the number of pages ...")
         href_list = tree.xpath(self.XPATH_DICT["href_links"])
         all_pages = [1]
         for href in href_list:
@@ -61,7 +65,11 @@ class Crawler(ParserMixin):
 
     def crawl_filmography(self, url) -> list:
         new_url = f"{url}&role-cat=none&orderby=date-desc&v=slist&p=1"
-        total_page, result_list = self.processe_single_page(new_url, check_total_pages=True)
+        try:
+            total_page, result_list = self.processe_single_page(new_url, check_total_pages=True)
+        except Exception as e:
+            raise Exception("COULD NOT GET: <total_page>, <result_list>")
+        self.logger.info(f"<total_page>: {total_page}")
         if total_page == 1:
             return result_list
         for page in range(total_page+1, 2):

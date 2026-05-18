@@ -49,4 +49,3 @@ class ParserMixin:
     def get_tree(self, url, impersonate: str = None, kwargs: str = {}):
         response = self.http_client(url, impersonate=impersonate, kwargs=kwargs)
         return self.html_parser(response.text)
-

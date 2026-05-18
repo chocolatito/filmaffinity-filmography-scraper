@@ -38,7 +38,7 @@ class Orchestrator:
         if name_id in self.names_result_dict:
             self.logger.warning(self.WARNING_NAME_ID(name_id=name_id))
             return
-        self.logger.info(f"Scraping name: {director_url}")
+
         item_director = scraper.scrape_name(director_url)
         filmography_url = item_director["filmography_url"]
         self.logger.info(f"Crawling filmography: {filmography_url}")
@@ -61,9 +61,8 @@ class Orchestrator:
         for index, url in enumerate(film_urls, 1):
             current = f"{index}/{total_films}: {url}"
             self.logger.info(f"Processing {current}")
-            scraper = Scraper()
-            crawler = Crawler()
-            self.logger.info("Scraping film ...")
+            scraper = Scraper(base_logger=self.base_logger)
+            crawler = Crawler(base_logger=self.base_logger)
             result = scraper.scrape_film(url)
             data_movie_id = result["data_movie_id"]
             result["full_details"] = True
@@ -75,8 +74,8 @@ class Orchestrator:
                     self.logger.error(f"COULD NOT COMPLETE - {current}: {e}")
 
     def main_from_director_to_title(self, names_urls: list):
-        scraper = Scraper()
-        crawler = Crawler()
+        scraper = Scraper(base_logger=self.base_logger)
+        crawler = Crawler(base_logger=self.base_logger)
         result_dict = {}
         total_names = len(names_urls)
         for index, url in enumerate(names_urls, 1):
@@ -85,7 +84,6 @@ class Orchestrator:
             if name_id in self.names_result_dict:
                 self.logger.warning(self.WARNING_NAME_ID(_id=name_id))
                 continue
-            self.logger.info("Scraping name ...")
             item = scraper.scrape_name(url)
             filmography_url = item["filmography_url"]
             self.logger.info(f"Crawling filmography: {filmography_url}")
@@ -122,7 +120,6 @@ class Orchestrator:
         try:
             self.main_from_director_to_title(names_urls)
         except Exception as e:
-            self.logger.error(f"{e}")
             self.logger.error(f"COULD NOT COMPLETE: <names_urls> processing: {e}")
 
         if self.films_result_dict:
