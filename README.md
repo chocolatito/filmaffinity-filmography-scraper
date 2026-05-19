@@ -9,6 +9,8 @@ A simple program to extract the filmography of actors or directors from the webs
 * [Output files](#output-files)
 
 ## Install dependencies
+
+Python 3.10+ is required
 ```sh
 $ python3 -m venv venv
 $ source venv/bin/activate

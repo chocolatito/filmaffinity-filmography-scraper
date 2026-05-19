@@ -3,6 +3,7 @@ from logging import Logger
 from src import constants
 from src.parser_mixin import ParserMixin
 from src import utils
+from lxml.html import HtmlElement
 
 
 class Scraper(ParserMixin):
@@ -38,7 +39,7 @@ class Scraper(ParserMixin):
         self.logger = utils.adapter_log(base_logger, {"worker_id": "SCRAPER"})
         self.configure_parser()
 
-    def scrape_name(self, url) -> dict:
+    def scrape_name(self, url: str) -> dict:
         self.logger.info(f"Scraping name from {url}")
         tree = self.get_tree(url)
         result = {}
@@ -64,41 +65,7 @@ class Scraper(ParserMixin):
         result["name_id"] = utils.get_parameter_from_url(url, "name-id")
         return result
 
-    def scrape_film(self, url) -> dict:
-        self.logger.info(f"Scraping film from {url}")
-        result = {}
-        tree = self.get_tree(url, kwargs={"headers": constants.HEADERS})
-        elements = tree.xpath(self.FILM_XPATH_DICT["data_movie_id"])
-        if elements == []:
-            raise Exception('XPATH <data_movie_id> DOES NOT WORK')
-        result["data_movie_id"] = elements[0]
-        dd_list = tree.xpath(self.FILM_XPATH_DICT["dd_list"])
-        for index, dd in enumerate(dd_list, 1):
-            if itemprop := dd.attrib.get("itemprop", None):
-                itemprop = itemprop.lower()
-                result[itemprop] = dd.text_content().strip()
-                continue
-            key = dd.xpath("preceding-sibling::dt[1]")[0].text_content()
-            key = key.strip().lower()
-            if len(dd) == 0:
-                result[key] = dd.text_content().strip()
-                continue
-            if not (anchor_list := dd.xpath('.//a')):
-                result[key] = dd.text_content().strip()
-                continue
-            values = []
-            for a in anchor_list:
-                attrib = dict(a.attrib)
-                if "class" in attrib:
-                    attrib.pop("class")
-                if "itemprop" in attrib:
-                    attrib.pop("itemprop")
-                if len(attrib) == 1:
-                    attrib["title"] = a.text.strip()
-                values.append(attrib)
-            result[key] = values
-
-        self.logger.info(f"Getting <clean_result> ...")
+    def get_clean_result(self, result: dict) -> dict:
         clean_result = {}
         for k, v in self.MATCH_KEYS.items():
             clean_result[v] = result[k] if k in result else None
@@ -107,5 +74,49 @@ class Scraper(ParserMixin):
                 if k in self.MATCH_KEYS:
                     continue
                 clean_result["extra_keys"][k] = v
+        return clean_result
+
+    def process_dd(self, dd: HtmlElement) -> dict:
+        extra_data = {}
+        key = dd.xpath("preceding-sibling::dt[1]")[0].text_content()
+        key = key.strip().lower()
+        if len(dd) == 0:
+            extra_data[key] = dd.text_content().strip()
+            return extra_data
+        if not (anchor_list := dd.xpath('.//a')):
+            extra_data[key] = dd.text_content().strip()
+            return extra_data
+        values = []
+        for a in anchor_list:
+            attrib = dict(a.attrib)
+            if "class" in attrib:
+                attrib.pop("class")
+            if "itemprop" in attrib:
+                attrib.pop("itemprop")
+            if len(attrib) == 1:
+                attrib["title"] = a.text.strip()
+            values.append(attrib)
+        extra_data[key] = values
+        return extra_data
+
+    def scrape_film(self, url: str) -> dict:
+        self.logger.info(f"Scraping film from {url}")
+        tree = self.get_tree(url, kwargs={"headers": constants.HEADERS})
+        elements = tree.xpath(self.FILM_XPATH_DICT["data_movie_id"])
+        if elements == []:
+            raise Exception('XPATH <data_movie_id> DOES NOT WORK')
+        result = {}
+        result["data_movie_id"] = elements[0]
+        dd_list = tree.xpath(self.FILM_XPATH_DICT["dd_list"])
+        for index, dd in enumerate(dd_list, 1):
+            if itemprop := dd.attrib.get("itemprop", None):
+                itemprop = itemprop.lower()
+                result[itemprop] = dd.text_content().strip()
+                continue
+            extra_data = self.process_dd(dd)
+            result.update(extra_data)
+
+        self.logger.info(f"Getting <clean_result> ...")
+        clean_result = self.get_clean_result(result)
         clean_result["url"] = url
         return clean_result

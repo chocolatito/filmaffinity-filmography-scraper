@@ -38,7 +38,6 @@ class Orchestrator:
         if name_id in self.names_result_dict:
             self.logger.warning(self.WARNING_NAME_ID(name_id=name_id))
             return
-
         item_director = scraper.scrape_name(director_url)
         filmography_url = item_director["filmography_url"]
         self.logger.info(f"Crawling filmography: {filmography_url}")
@@ -70,9 +69,9 @@ class Orchestrator:
                 try:
                     self.process_director(item, scraper, crawler)
                 except Exception as e:
-                    self.logger.error(f"COULD NOT COMPLETE - {current}: {e}")
+                    raise Exception(f"COULD NOT COMPLETE - {current}: {e}")
 
-    def main_from_director_to_title(self, names_urls: list):
+    def main_from_director_to_title(self, names_urls: list) -> None:
         scraper = Scraper(base_logger=self.base_logger)
         crawler = Crawler(base_logger=self.base_logger)
         result_dict = {}
@@ -97,29 +96,7 @@ class Orchestrator:
             item["url"] = url
             self.names_result_dict[name_id] = item.copy()
 
-    def main(self) -> None:
-        self.logger.info("START Orchestrator")
-        self.checking_file_dir()
-        self.logger.info(f"Total INPUTs: {self.total_titles}")
-        film_urls = []
-        names_urls = []
-        for url in self.input_list:
-            if self.FILM_PATTERN.search(url):
-                film_urls.append(url)
-            if self.NAME_PATTERN.search(url):
-                names_urls.append(url)
-        self.logger.info(f"Total <film_urls>: {len(film_urls)}")
-        self.logger.info(f"Total <names_urls>: {len(names_urls)}")
-        try:
-            self.main_from_title_to_director(film_urls)
-        except Exception as e:
-            self.logger.error(f"COULD NOT COMPLETE: <film_urls> processing: {e}")
-
-        try:
-            self.main_from_director_to_title(names_urls)
-        except Exception as e:
-            self.logger.error(f"COULD NOT COMPLETE: <names_urls> processing: {e}")
-
+    def save_results(self) -> None:
         if self.films_result_dict:
             try:
                 utils.save_json(self.FILMS_RESULT_PATH, self.films_result_dict)
@@ -137,4 +114,35 @@ class Orchestrator:
                 self.logger.error(f"COULD NOT BE SAVED: <names_result_dict>: {e}")
         else:
             self.logger.warning("<names_result_dict> is empty")
+
+    def main(self) -> None:
+        self.logger.info("START Orchestrator")
+        self.checking_file_dir()
+        self.logger.info(f"Total INPUTs: {self.total_titles}")
+        film_urls = []
+        names_urls = []
+        invalid_ulrs = []
+        for url in self.input_list:
+            if self.FILM_PATTERN.search(url):
+                film_urls.append(url)
+            elif self.NAME_PATTERN.search(url):
+                names_urls.append(url)
+            else:
+                invalid_ulrs.append(url)
+                self.logger.warning(f"INVALID URL: {url}")
+        if invalid_ulrs != []:
+            self.logger.critical(f"Total <invalid_ulrs>: {len(invalid_ulrs)}")
+            return
+        self.logger.info(f"Total <film_urls>: {len(film_urls)}")
+        self.logger.info(f"Total <names_urls>: {len(names_urls)}")
+        try:
+            self.main_from_title_to_director(film_urls)
+        except Exception as e:
+            self.logger.error(f"COULD NOT COMPLETE: <film_urls> processing: {e}")
+
+        try:
+            self.main_from_director_to_title(names_urls)
+        except Exception as e:
+            self.logger.error(f"COULD NOT COMPLETE: <names_urls> processing: {e}")
+        self.save_results()
         self.logger.info("END Orchestrator")
