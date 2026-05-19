@@ -53,7 +53,7 @@ class Scraper(ParserMixin):
             raise Exception('XPATH <name> DOES NOT WORK')
 
         result["filmography_url"] = elements[0]
-        self.logger.info(f"Looking for attributes")
+        self.logger.info("Looking for attributes")
         for att in tree.xpath(self.NAME_XPATH_DICT["attribute"]):
             value = att.text_content().strip()
             if value == "":
@@ -116,7 +116,7 @@ class Scraper(ParserMixin):
             extra_data = self.process_dd(dd)
             result.update(extra_data)
 
-        self.logger.info(f"Getting <clean_result> ...")
+        self.logger.info("Getting <clean_result> ...")
         clean_result = self.get_clean_result(result)
         clean_result["url"] = url
         return clean_result

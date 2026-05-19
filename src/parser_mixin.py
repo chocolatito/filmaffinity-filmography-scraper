@@ -1,6 +1,5 @@
 import random
 import time
-import urllib.parse
 from curl_cffi import requests
 from curl_cffi.requests.impersonate import REAL_TARGET_MAP
 from lxml import html

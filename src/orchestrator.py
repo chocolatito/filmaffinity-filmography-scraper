@@ -74,7 +74,6 @@ class Orchestrator:
     def main_from_director_to_title(self, names_urls: list) -> None:
         scraper = Scraper(base_logger=self.base_logger)
         crawler = Crawler(base_logger=self.base_logger)
-        result_dict = {}
         total_names = len(names_urls)
         for index, url in enumerate(names_urls, 1):
             self.logger.info(f"Processing {index}/{total_names}: {url}")

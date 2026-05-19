@@ -41,7 +41,9 @@ class Crawler(ParserMixin):
         self.results_by_title = []
         self.director_dict = {}
 
-    def processe_single_page(self, url: str, check_total_pages: bool = False) -> list | tuple[int, list]:
+    def processe_single_page(self,
+                             url: str,
+                             check_total_pages: bool = False) -> list | tuple[int, list]:
         self.logger.info(f"Fetching page {url}")
         tree = self.get_tree(url)
         result_list = []
@@ -55,7 +57,7 @@ class Crawler(ParserMixin):
             result_list.append(result)
         if check_total_pages is False:
             return result_list
-        self.logger.info(f"Obtaining the number of pages ...")
+        self.logger.info("Obtaining the number of pages ...")
         href_list = tree.xpath(self.XPATH_DICT["href_links"])
         all_pages = [1]
         for href in href_list:
@@ -68,7 +70,7 @@ class Crawler(ParserMixin):
         try:
             total_page, result_list = self.processe_single_page(new_url, check_total_pages=True)
         except Exception as e:
-            raise Exception("COULD NOT GET: <total_page>, <result_list>")
+            raise Exception(f"COULD NOT GET: <total_page>, <result_list>: {e}")
         self.logger.info(f"<total_page>: {total_page}")
         if total_page == 1:
             return result_list

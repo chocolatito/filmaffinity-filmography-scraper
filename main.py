@@ -1,6 +1,5 @@
 import argparse
 import json
-import os
 from src.orchestrator import Orchestrator
 
 if __name__ == "__main__":
