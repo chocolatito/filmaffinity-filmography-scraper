@@ -14,7 +14,8 @@ def init__logger(file_name: str,
     """
     """
     if log_format is None:
-        log_format = "%(asctime)s | %(levelname)-7s [%(worker_id)s] %(funcName)s#L-%(lineno)d | %(message)s"
+        log_format = ("%(asctime)s | %(levelname)-7s [%(worker_id)s] %(funcName)s#L-%(lineno)d"
+                      " | %(message)s")
 
     logger = logging.getLogger(file_name)
     if debug_level:
