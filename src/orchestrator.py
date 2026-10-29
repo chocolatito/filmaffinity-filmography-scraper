@@ -16,7 +16,7 @@ class Orchestrator:
     FILMS_RESULT_PATH = utils.join_names([constants.FILE_DIR, "films_results.json"])
     NAMES_RESULT_PATH = utils.join_names([constants.FILE_DIR, "names_results.json"])
 
-    def __init__(self, input_list: list):
+    def __init__(self, input_list: list) -> None:
         self.base_logger = utils.init__logger(constants.LOG_NAME)
         self.logger = utils.adapter_log(self.base_logger, {"worker_id": 'MAIN'})
         self.input_list = input_list
@@ -24,7 +24,7 @@ class Orchestrator:
         self.films_result_dict = {}
 
     @property
-    def total_titles(self): return len(self.input_list)
+    def total_titles(self) -> int: return len(self.input_list)
 
     def checking_file_dir(self) -> None:
         dir_path = utils.join_names(constants.FILE_DIR)
