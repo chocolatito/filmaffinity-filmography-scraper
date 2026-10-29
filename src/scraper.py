@@ -8,8 +8,9 @@ from lxml.html import HtmlElement
 
 class Scraper(ParserMixin):
     FILM_XPATH_DICT = {
-        "data_movie_id": ('//div[@data-movie-id and @data-user-rating]/@data-movie-id'
-                          ' | //div[@id="movie-main-image-container"]/a[@data-movie-id]/@data-movie-id'),
+        "data_movie_id": (
+            '//div[@data-movie-id and @data-user-rating]/@data-movie-id'
+            ' | //div[@id="movie-main-image-container"]/a[@data-movie-id]/@data-movie-id'),
         "dd_list": '//div[@id="left-column"]/dl[1]/dt/following-sibling::dd',
     }
 
