@@ -8,7 +8,9 @@ from lxml.html import HtmlElement
 
 class Scraper(ParserMixin):
     FILM_XPATH_DICT = {
-        "data_movie_id": '//div[@id="item2item"]/@data-movie-id',
+        "data_movie_id": (
+            '//div[@data-movie-id and @data-user-rating]/@data-movie-id'
+            ' | //div[@id="movie-main-image-container"]/a[@data-movie-id]/@data-movie-id'),
         "dd_list": '//div[@id="left-column"]/dl[1]/dt/following-sibling::dd',
     }
 
@@ -102,7 +104,7 @@ class Scraper(ParserMixin):
     def scrape_film(self, url: str) -> dict:
         self.logger.info(f"Scraping film from {url}")
         tree = self.get_tree(url, kwargs={"headers": constants.HEADERS})
-        elements = tree.xpath(self.FILM_XPATH_DICT["data_movie_id"])
+        elements = list(set(tree.xpath(self.FILM_XPATH_DICT["data_movie_id"])))
         if elements == []:
             raise Exception('XPATH <data_movie_id> DOES NOT WORK')
         result = {}
